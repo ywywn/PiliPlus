@@ -4,6 +4,7 @@ import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 abstract class ThemeUtils {
   static ThemeData getThemeData({
@@ -22,6 +23,7 @@ abstract class ThemeUtils {
     ThemeData themeData = ThemeData(
       colorScheme: colorScheme,
       useMaterial3: true,
+      fontFamily: GoogleFonts.notoSansSc().fontFamily,
       textTheme: fontWeight == null
           ? null
           : TextTheme(
