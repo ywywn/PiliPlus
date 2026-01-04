@@ -96,12 +96,14 @@ class MemberVideoCtr
     count.value = type == ContributeType.season
         ? (data.item?.length ?? -1)
         : (data.count ?? -1);
-    if (page != 0 && loadingState.value.isSuccess) {
-      data.item ??= <SpaceArchiveItem>[];
-      if (isLoadPrevious) {
-        data.item!.addAll(loadingState.value.data!);
-      } else {
-        data.item!.insertAll(0, loadingState.value.data!);
+    if (page != 0) {
+      if (loadingState.value case Success(:final response)) {
+        data.item ??= <SpaceArchiveItem>[];
+        if (isLoadPrevious) {
+          data.item!.addAll(response!);
+        } else {
+          data.item!.insertAll(0, response!);
+        }
       }
     }
     firstAid = data.item?.firstOrNull?.param;
@@ -152,8 +154,8 @@ class MemberVideoCtr
       final params = Uri.parse(episodicButton.uri!).queryParameters;
       String? oid = params['oid'];
       if (oid != null) {
-        var bvid = IdUtils.av2bv(int.parse(oid));
-        var cid = await SearchHttp.ab2c(aid: oid, bvid: bvid);
+        final bvid = IdUtils.av2bv(int.parse(oid));
+        final cid = await SearchHttp.ab2c(aid: oid, bvid: bvid);
         if (cid != null) {
           PageUtils.toVideoPage(
             aid: int.parse(oid),
@@ -178,12 +180,10 @@ class MemberVideoCtr
       return;
     }
 
-    if (loadingState.value.isSuccess) {
-      List<SpaceArchiveItem>? list = loadingState.value.data;
+    if (loadingState.value case Success(:final response)) {
+      if (response == null || response.isEmpty) return;
 
-      if (list.isNullOrEmpty) return;
-
-      for (SpaceArchiveItem element in list!) {
+      for (SpaceArchiveItem element in response) {
         if (element.cid == null) {
           continue;
         } else {

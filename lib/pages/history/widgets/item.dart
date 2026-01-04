@@ -164,7 +164,7 @@ class HistoryItem extends StatelessWidget {
                                 ),
                               ),
                             Positioned.fill(
-                              child: selectMask(theme, item.checked == true),
+                              child: selectMask(theme, item.checked),
                             ),
                           ],
                         );
@@ -220,7 +220,7 @@ class HistoryItem extends StatelessWidget {
                             business?.contains('article') != true)
                           PopupMenuItem<String>(
                             onTap: () async {
-                              var res = await UserHttp.toViewLater(
+                              final res = await UserHttp.toViewLater(
                                 bvid: item.history.bvid,
                               );
                               SmartDialog.showToast(res['msg']);

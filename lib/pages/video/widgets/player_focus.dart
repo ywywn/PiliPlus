@@ -59,7 +59,10 @@ class PlayerFocus extends StatelessWidget {
 
   void _setVolume({required bool isIncrease}) {
     final volume = isIncrease
-        ? math.min(1.0, plPlayerController.volume.value + 0.1)
+        ? math.min(
+            PlPlayerController.maxVolume,
+            plPlayerController.volume.value + 0.1,
+          )
         : math.max(0.0, plPlayerController.volume.value - 0.1);
     plPlayerController.setVolume(volume);
   }
@@ -251,7 +254,7 @@ class PlayerFocus extends StatelessWidget {
             return true;
 
           case LogicalKeyboardKey.keyG:
-            if (introController case UgcIntroController ugcCtr) {
+            if (introController case final UgcIntroController ugcCtr) {
               ugcCtr.actionRelationMod(Get.context!);
             }
             return true;

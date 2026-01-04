@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' show min;
 import 'dart:ui';
 
+import 'package:PiliPlus/common/constants.dart';
 import 'package:PiliPlus/common/widgets/pair.dart';
 import 'package:PiliPlus/common/widgets/progress_bar/segment_progress_bar.dart';
 import 'package:PiliPlus/grpc/bilibili/app/listener/v1.pbenum.dart'
@@ -39,6 +40,7 @@ import 'package:PiliPlus/models_new/video/video_pbp/data.dart';
 import 'package:PiliPlus/models_new/video/video_play_info/subtitle.dart';
 import 'package:PiliPlus/models_new/video/video_stein_edgeinfo/data.dart';
 import 'package:PiliPlus/pages/audio/view.dart';
+import 'package:PiliPlus/pages/common/publish/publish_route.dart';
 import 'package:PiliPlus/pages/search/widgets/search_text.dart';
 import 'package:PiliPlus/pages/video/download_panel/view.dart';
 import 'package:PiliPlus/pages/video/introduction/pgc/controller.dart';
@@ -57,6 +59,7 @@ import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/extension/context_ext.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
+import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/size_ext.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
@@ -70,8 +73,7 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:flutter_volume_controller/flutter_volume_controller.dart';
-import 'package:get/get.dart' hide ContextExtensionss;
-import 'package:get/get_navigation/src/dialog/dialog_route.dart';
+import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:media_kit/media_kit.dart';
@@ -164,8 +166,9 @@ class VideoDetailController extends GetxController
   late final scrollKey = GlobalKey<ExtendedNestedScrollViewState>();
   late final RxBool isVertical = false.obs;
   late final RxDouble scrollRatio = 0.0.obs;
-  late final ScrollController scrollCtr = ScrollController()
-    ..addListener(scrollListener);
+  ScrollController? _scrollCtr;
+  ScrollController get scrollCtr =>
+      _scrollCtr ??= ScrollController()..addListener(scrollListener);
   late bool isExpanding = false;
   late bool isCollapsing = false;
   AnimationController? animController;
@@ -215,9 +218,7 @@ class VideoDetailController extends GetxController
           } else {
             // current maxVideoHeight
             final currentHeight = (maxVideoHeight - scrollCtr.offset)
-                .toPrecision(
-                  2,
-                );
+                .toPrecision(2);
             double minVideoHeightPrecise = minVideoHeight.toPrecision(2);
             if (currentHeight == minVideoHeightPrecise) {
               isExpanding = true;
@@ -352,7 +353,7 @@ class VideoDetailController extends GetxController
     if (!isReverse && count != null && mediaList.length >= count) {
       return;
     }
-    var res = await UserHttp.getMediaList(
+    final res = await UserHttp.getMediaList(
       type: args['mediaType'] ?? sourceType.mediaType,
       bizId: args['mediaId'] ?? -1,
       ps: 20,
@@ -383,7 +384,7 @@ class VideoDetailController extends GetxController
       if (response.mediaList.isNotEmpty) {
         if (isReverse) {
           mediaList.value = response.mediaList;
-          for (var item in mediaList) {
+          for (final item in mediaList) {
             if (item.cid != null) {
               try {
                 Get.find<UgcIntroController>(
@@ -431,7 +432,7 @@ class VideoDetailController extends GetxController
                 (sourceType == SourceType.fav && args['isOwner'] == true)
             ? (item, index) async {
                 if (sourceType == SourceType.watchLater) {
-                  var res = await UserHttp.toViewDel(
+                  final res = await UserHttp.toViewDel(
                     aids: item.aid.toString(),
                   );
                   if (res['status']) {
@@ -439,7 +440,7 @@ class VideoDetailController extends GetxController
                   }
                   SmartDialog.showToast(res['msg']);
                 } else {
-                  var res = await FavHttp.favVideo(
+                  final res = await FavHttp.favVideo(
                     resources: '${item.aid}:${item.type}',
                     delIds: '${args['mediaId']}',
                   );
@@ -1014,7 +1015,7 @@ class VideoDetailController extends GetxController
     }
   }
 
-  ({int mode, int fontsize, Color color})? dmConfig;
+  ({int mode, int fontSize, Color color})? dmConfig;
   String? savedDanmaku;
 
   /// 发送弹幕
@@ -1027,8 +1028,8 @@ class VideoDetailController extends GetxController
     if (isPlaying) {
       await plPlayerController.pause();
     }
-    await Navigator.of(Get.context!).push(
-      GetDialogRoute(
+    await Get.key.currentState!.push(
+      PublishRoute(
         pageBuilder: (buildContext, animation, secondaryAnimation) {
           return SendDanmakuPanel(
             cid: cid.value,
@@ -1036,25 +1037,13 @@ class VideoDetailController extends GetxController
             progress: plPlayerController.position.value.inMilliseconds,
             initialValue: savedDanmaku,
             onSave: (danmaku) => savedDanmaku = danmaku,
-            callback: (danmakuModel) {
+            onSuccess: (danmakuModel) {
               savedDanmaku = null;
               plPlayerController.danmakuController?.addDanmaku(danmakuModel);
             },
             darkVideoPage: plPlayerController.darkVideoPage,
             dmConfig: dmConfig,
             onSaveDmConfig: (dmConfig) => this.dmConfig = dmConfig,
-          );
-        },
-        transitionDuration: const Duration(milliseconds: 500),
-        transitionBuilder: (context, animation, secondaryAnimation, child) {
-          return SlideTransition(
-            position: animation.drive(
-              Tween(
-                begin: const Offset(0.0, 1.0),
-                end: Offset.zero,
-              ).chain(CurveTween(curve: Curves.linear)),
-            ),
-            child: child,
           );
         },
       ),
@@ -1077,7 +1066,7 @@ class VideoDetailController extends GetxController
     ).codes;
 
     VideoItem? video;
-    for (var i in videoList) {
+    for (final i in videoList) {
       final codec = i.codecs!;
       if (currentDecodeFormats.any(codec.startsWith)) {
         video = i;
@@ -1171,11 +1160,11 @@ class VideoDetailController extends GetxController
       seasonId: isUgc ? null : seasonId,
       pgcType: isUgc ? null : pgcType,
       videoType: videoType,
-      callback: () async {
+      onInit: () {
         if (videoState.value is! Success) {
           videoState.value = const Success(null);
         }
-        await setSubtitle(vttSubtitlesIndex.value);
+        setSubtitle(vttSubtitlesIndex.value);
       },
       width: firstVideo.width,
       height: firstVideo.height,
@@ -1244,7 +1233,7 @@ class VideoDetailController extends GetxController
             : Pref.defaultAudioQaCellular;
     }
 
-    var result = await VideoHttp.videoUrl(
+    final result = await VideoHttp.videoUrl(
       cid: cid.value,
       bvid: bvid,
       epid: epId,
@@ -1254,8 +1243,8 @@ class VideoDetailController extends GetxController
       language: currLang.value,
     );
 
-    if (result.isSuccess) {
-      data = result.data;
+    if (result case Success(:final response)) {
+      data = response;
 
       languages.value = data.language?.items;
       currLang.value = data.curLanguage;
@@ -1490,7 +1479,7 @@ class VideoDetailController extends GetxController
     if (subtitle != null) {
       await setSub(subtitle);
     } else {
-      var result = await VideoHttp.vttSubtitles(
+      final result = await VideoHttp.vttSubtitles(
         subtitles[index - 1].subtitleUrl!,
       );
       if (result != null) {
@@ -1508,7 +1497,7 @@ class VideoDetailController extends GetxController
   Future<void> getSteinEdgeInfo([int? edgeId]) async {
     steinEdgeInfo = null;
     try {
-      var res = await Request().get(
+      final res = await Request().get(
         '/x/stein/edgeinfo_v2',
         queryParameters: {
           'bvid': bvid,
@@ -1536,7 +1525,7 @@ class VideoDetailController extends GetxController
     if (plPlayerController.showViewPoints) {
       viewPointList.clear();
     }
-    var res = await VideoHttp.playInfo(
+    final res = await VideoHttp.playInfo(
       bvid: bvid,
       cid: cid.value,
       seasonId: seasonId,
@@ -1656,14 +1645,18 @@ class VideoDetailController extends GetxController
 
   @override
   void onClose() {
+    cancelSkipTimer();
+    positionSubscription?.cancel();
+    positionSubscription = null;
+    cid.close();
     if (isFileSource) {
       cacheLocalProgress();
     }
     introScrollCtr?.dispose();
     introScrollCtr = null;
     tabCtr.dispose();
-    scrollCtr
-      ..removeListener(scrollListener)
+    _scrollCtr
+      ?..removeListener(scrollListener)
       ..dispose();
     animController?.dispose();
     super.onClose();
@@ -1732,7 +1725,7 @@ class VideoDetailController extends GetxController
   Future<void> _getDmTrend() async {
     dmTrend.value = LoadingState<List<double>>.loading();
     try {
-      var res = await Request().get(
+      final res = await Request().get(
         'https://bvc.bilivideo.com/pbp/data',
         queryParameters: {
           'bvid': bvid,
@@ -1800,7 +1793,7 @@ class VideoDetailController extends GetxController
   bool onSkipSegment() {
     try {
       if (plPlayerController.enableBlock) {
-        if (listData.lastOrNull case SegmentModel item) {
+        if (listData.lastOrNull case final SegmentModel item) {
           onSkip(item, isSeek: false);
           onRemoveItem(listData.indexOf(item), item);
           return true;
@@ -1942,7 +1935,7 @@ class VideoDetailController extends GetxController
     showDialog(
       context: Get.context!,
       builder: (context) => AlertDialog(
-        constraints: const BoxConstraints(maxWidth: 425, minWidth: 425),
+        constraints: StyleString.dialogFixedConstraints,
         title: const Text('播放地址'),
         content: Column(
           spacing: 20,
@@ -1986,9 +1979,8 @@ class VideoDetailController extends GetxController
       qn: currentVideoQa.value?.code,
     );
     SmartDialog.dismiss();
-    if (res.isSuccess) {
-      final data = res.data;
-      final first = data.durl?.firstOrNull;
+    if (res case Success(:final response)) {
+      final first = response.durl?.firstOrNull;
       if (first == null || first.playUrls.isEmpty) {
         SmartDialog.showToast('不支持投屏');
         return;

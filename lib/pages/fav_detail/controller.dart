@@ -11,7 +11,6 @@ import 'package:PiliPlus/pages/common/multi_select/base.dart';
 import 'package:PiliPlus/pages/common/multi_select/multi_select_controller.dart';
 import 'package:PiliPlus/pages/fav_sort/view.dart';
 import 'package:PiliPlus/utils/accounts.dart';
-import 'package:PiliPlus/utils/extension/iterable_ext.dart';
 import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
@@ -33,18 +32,18 @@ mixin BaseFavController
   void onViewFav(FavDetailItemModel item, int? index);
 
   Future<void> onCancelFav(int index, int id, int type) async {
-    var result = await FavHttp.favVideo(
+    final res = await FavHttp.favVideo(
       resources: '$id:$type',
       delIds: mediaId.toString(),
     );
-    if (result.isSuccess) {
+    if (res.isSuccess) {
       loadingState
         ..value.data!.removeAt(index)
         ..refresh();
       updateCount?.call(1);
       SmartDialog.showToast('取消收藏');
     } else {
-      result.toast();
+      res.toast();
     }
   }
 
@@ -56,18 +55,18 @@ mixin BaseFavController
       title: '提示',
       onConfirm: () async {
         final removeList = allChecked.toSet();
-        var result = await FavHttp.favVideo(
+        final res = await FavHttp.favVideo(
           resources: removeList
               .map((item) => '${item.id}:${item.type}')
               .join(','),
           delIds: mediaId.toString(),
         );
-        if (result.isSuccess) {
+        if (res.isSuccess) {
           updateCount?.call(removeList.length);
           afterDelete(removeList);
           SmartDialog.showToast('取消收藏');
         } else {
-          result.toast();
+          res.toast();
         }
       },
     );
@@ -152,11 +151,10 @@ class FavDetailController
       );
 
   void toViewPlayAll() {
-    if (loadingState.value.isSuccess) {
-      List<FavDetailItemModel>? list = loadingState.value.data;
-      if (list.isNullOrEmpty) return;
+    if (loadingState.value case Success(:final response)) {
+      if (response == null || response.isEmpty) return;
 
-      for (FavDetailItemModel element in list!) {
+      for (FavDetailItemModel element in response) {
         if (element.ugc?.firstCid == null) {
           continue;
         } else {
@@ -178,7 +176,7 @@ class FavDetailController
       SmartDialog.showToast('账号未登录');
       return;
     }
-    var res = isFav
+    final res = isFav
         ? await FavHttp.unfavFavFolder(mediaId)
         : await FavHttp.favFavFolder(mediaId);
 
@@ -191,7 +189,7 @@ class FavDetailController
   }
 
   Future<void> cleanFav() async {
-    var res = await FavHttp.cleanFav(mediaId: mediaId);
+    final res = await FavHttp.cleanFav(mediaId: mediaId);
     if (res.isSuccess) {
       SmartDialog.showToast('清除成功');
       Future.delayed(const Duration(milliseconds: 200), onReload);
@@ -201,13 +199,14 @@ class FavDetailController
   }
 
   void onSort() {
-    if (loadingState.value.isSuccess &&
-        loadingState.value.data?.isNotEmpty == true) {
-      if (folderInfo.value.mediaCount > 1000) {
-        SmartDialog.showToast('内容太多啦！超过1000不支持排序');
-        return;
+    if (loadingState.value case Success(:final response)) {
+      if (response != null && response.isNotEmpty) {
+        if (folderInfo.value.mediaCount > 1000) {
+          SmartDialog.showToast('内容太多啦！超过1000不支持排序');
+          return;
+        }
+        Get.to(FavSortPage(favDetailController: this));
       }
-      Get.to(FavSortPage(favDetailController: this));
     }
   }
 

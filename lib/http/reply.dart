@@ -10,7 +10,7 @@ import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
 import 'package:dio/dio.dart';
 
-class ReplyHttp {
+abstract final class ReplyHttp {
   static final Options options = Options(
     headers: {...Constants.baseHeaders, 'cookie': ''},
     extra: {'account': const NoAccount()},
@@ -24,7 +24,7 @@ class ReplyHttp {
     required int page,
     int sort = 1,
   }) async {
-    var res = !isLogin
+    final res = !isLogin
         ? await Request().get(
             '${Api.replyList}/main',
             queryParameters: {
@@ -62,7 +62,7 @@ class ReplyHttp {
     required int type,
     bool isCheck = false,
   }) async {
-    var res = await Request().get(
+    final res = await Request().get(
       Api.replyReplyList,
       queryParameters: {
         'oid': oid,
@@ -92,7 +92,7 @@ class ReplyHttp {
     required int oid,
     required int rpid,
   }) async {
-    var res = await Request().post(
+    final res = await Request().post(
       Api.hateReply,
       data: {
         'type': type,
@@ -117,7 +117,7 @@ class ReplyHttp {
     required int rpid,
     required int action,
   }) async {
-    var res = await Request().post(
+    final res = await Request().post(
       Api.likeReply,
       data: {
         'type': type,
@@ -138,7 +138,7 @@ class ReplyHttp {
   static Future<LoadingState<List<Package>?>> getEmoteList({
     String? business,
   }) async {
-    var res = await Request().get(
+    final res = await Request().get(
       Api.myEmote,
       queryParameters: {
         'business': business ?? 'reply',
@@ -158,7 +158,7 @@ class ReplyHttp {
     required Object rpid,
     required bool isUpTop,
   }) async {
-    var res = await Request().post(
+    final res = await Request().post(
       Api.replyTop,
       data: {
         'oid': oid,
@@ -169,6 +169,37 @@ class ReplyHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
+    if (res.data['code'] == 0) {
+      return const Success(null);
+    } else {
+      return Error(res.data['message']);
+    }
+  }
+
+  static Future<LoadingState<Null>> report({
+    required Object rpid,
+    required Object oid,
+    required int reasonType,
+    bool banUid = true,
+    String? reasonDesc,
+  }) async {
+    final res = await Request().post(
+      '/x/v2/reply/report',
+      data: {
+        'add_blacklist': banUid,
+        'csrf': Accounts.main.csrf,
+        'gaia_source': 'main_h5',
+        'oid': oid,
+        'platform': 'android',
+        'reason': reasonType,
+        'rpid': rpid,
+        'scene': 'main',
+        'type': 1,
+        if (reasonType == 0) 'content': reasonDesc!,
+      },
+      options: Options(contentType: Headers.formUrlEncodedContentType),
+    );
+
     if (res.data['code'] == 0) {
       return const Success(null);
     } else {

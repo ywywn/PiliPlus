@@ -18,20 +18,21 @@ import 'package:get/get.dart';
 import 'package:stream_transform/stream_transform.dart';
 
 mixin DebounceStreamMixin<T> {
-  Duration duration = const Duration(milliseconds: 200);
+  final Duration duration = const Duration(milliseconds: 200);
   StreamController<T>? ctr;
-  StreamSubscription<T>? sub;
+  StreamSubscription<T>? _sub;
   void onValueChanged(T value);
 
   void subInit() {
-    ctr = StreamController<T>();
-    sub = ctr!.stream.debounce(duration, trailing: true).listen(onValueChanged);
+    _sub = (ctr = StreamController<T>()).stream
+        .debounce(duration, trailing: true)
+        .listen(onValueChanged);
   }
 
   void subDispose() {
-    sub?.cancel();
+    _sub?.cancel();
     ctr?.close();
-    sub = null;
+    _sub = null;
     ctr = null;
   }
 }
@@ -214,7 +215,7 @@ class SSearchController extends GetxController
 
   @override
   Future<void> onValueChanged(String value) async {
-    var res = await SearchHttp.searchSuggest(term: value);
+    final res = await SearchHttp.searchSuggest(term: value);
     if (res case Success(:final response)) {
       if (response.tag?.isNotEmpty == true) {
         searchSuggestList.value = response.tag!;

@@ -48,6 +48,7 @@ import 'package:PiliPlus/plugin/pl_player/view.dart';
 import 'package:PiliPlus/services/service_locator.dart';
 import 'package:PiliPlus/services/shutdown_timer_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
+import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/image_utils.dart';
@@ -64,7 +65,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:get/get.dart' hide ContextExtensionss;
+import 'package:get/get.dart';
 import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
 
 class VideoDetailPageV extends StatefulWidget {
@@ -324,11 +325,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
       ?..removeStatusLister(playerListener)
       ..removePositionListener(positionListener);
 
-    videoDetailController
-      ..cancelSkipTimer()
-      ..positionSubscription?.cancel()
-      ..cid.close()
-      ..animController?.removeListener(animListener);
+    videoDetailController.animController?.removeListener(animListener);
 
     Get.delete<HorizontalMemberPageController>(
       tag: videoDetailController.heroTag,
@@ -1281,6 +1278,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                 'assets/images/play.png',
                 width: 60,
                 height: 60,
+                cacheHeight: 60.cacheSize(context),
               ),
             ),
           ),
@@ -1372,6 +1370,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                       playerController: plPlayerController!,
                       isFullScreen: plPlayerController!.isFullScreen.value,
                       isFileSource: videoDetailController.isFileSource,
+                      size: Size(width, height),
                     ),
                   ),
             showEpisodes: showEpisodes,
@@ -1594,12 +1593,11 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                   onTap: handlePlay,
                   child: Obx(
                     () => NetworkImgLayer(
-                      radius: 0,
+                      type: .emote,
                       quality: 60,
                       src: videoDetailController.cover.value,
                       width: width,
                       height: height,
-                      boxFit: BoxFit.cover,
                       forceUseCacheWidth: true,
                       getPlaceHolder: () => Center(
                         child: Image.asset('assets/images/loading.png'),
@@ -2114,7 +2112,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
           ..cid.refresh();
       } else {
         // switch to first episode
-        var episode = ugcIntroController
+        final episode = ugcIntroController
             .videoDetail
             .value
             .ugcSeason!
@@ -2140,7 +2138,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
         videoDetailController.cid.refresh();
       } else {
         // switch to first episode
-        var episode = videoDetail.pages!.first;
+        final episode = videoDetail.pages!.first;
         if (episode.cid != videoDetailController.cid.value) {
           ugcIntroController.onChangeEpisode(episode);
         } else {

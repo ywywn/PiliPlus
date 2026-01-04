@@ -16,6 +16,7 @@ import 'package:PiliPlus/pages/whisper_detail/widget/chat_item.dart';
 import 'package:PiliPlus/pages/whisper_link_setting/view.dart';
 import 'package:PiliPlus/utils/extension/file_ext.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
+import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/widget_ext.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
@@ -55,25 +56,6 @@ class _WhisperDetailPageState
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        leading: Center(
-          child: SizedBox(
-            width: 34,
-            height: 34,
-            child: IconButton(
-              tooltip: '返回',
-              style: IconButton.styleFrom(
-                padding: EdgeInsets.zero,
-                backgroundColor: theme.colorScheme.secondaryContainer,
-              ),
-              onPressed: Get.back,
-              icon: Icon(
-                Icons.arrow_back_outlined,
-                size: 18,
-                color: theme.colorScheme.onSecondaryContainer,
-              ),
-            ),
-          ),
-        ),
         title: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () {
@@ -110,6 +92,7 @@ class _WhisperDetailPageState
                 Image.asset(
                   'assets/images/live/live.gif',
                   height: 16,
+                  cacheHeight: 16.cacheSize(context),
                   filterQuality: FilterQuality.low,
                 ),
               ],
@@ -118,18 +101,19 @@ class _WhisperDetailPageState
         ),
         actions: [
           IconButton(
+            tooltip: '设置',
             onPressed: () => Get.to(
               WhisperLinkSettingPage(
                 talkerUid: _whisperDetailController.talkerId,
               ),
             ),
             icon: Icon(
-              size: 20,
+              size: 22,
               Icons.settings,
               color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 5),
         ],
       ),
       body: Padding(
@@ -168,7 +152,7 @@ class _WhisperDetailPageState
   Widget _buildBody(LoadingState<List<Msg>?> loadingState) {
     return switch (loadingState) {
       Loading() => loadingWidget,
-      Success(:var response) =>
+      Success(:final response) =>
         response != null && response.isNotEmpty
             ? ListView.separated(
                 shrinkWrap: true,
@@ -198,7 +182,7 @@ class _WhisperDetailPageState
                     const SizedBox(height: 12),
               )
             : scrollErrorWidget(onReload: _whisperDetailController.onReload),
-      Error(:var errMsg) => scrollErrorWidget(
+      Error(:final errMsg) => scrollErrorWidget(
         errMsg: errMsg,
         onReload: _whisperDetailController.onReload,
       ),
@@ -274,6 +258,7 @@ class _WhisperDetailPageState
                   minLines: 1,
                   maxLines: 4,
                   onChanged: onChanged,
+                  onSubmitted: onSubmitted,
                   textInputAction: TextInputAction.newline,
                   decoration: InputDecoration(
                     filled: true,
@@ -375,7 +360,7 @@ class _WhisperDetailPageState
 
   @override
   Future<void> onMention([bool fromClick = false]) {
-    return Future.value();
+    return Future.syncValue(null);
   }
 
   @override
